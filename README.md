@@ -1,5 +1,7 @@
 # Pantry Monthly Performance Dashboard
 
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/deploy?repository=joby31/last_ride&branch=main&mainModule=app.py)
+
 A comprehensive Streamlit dashboard for analyzing monthly pantry performance metrics across November, December, and January.
 
 ## Features
