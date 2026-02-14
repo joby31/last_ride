@@ -9,7 +9,8 @@ import glob
 st.set_page_config(page_title='Pantry Monthly Performance Dashboard', layout='wide')
 st.title('Pantry Monthly Performance Dashboard')
 
-BASE_PATH = r'c:/Users/anilk/OneDrive/Desktop/LAST_RIDE'
+# Define base path - use current directory for compatibility with Streamlit Cloud
+BASE_PATH = os.getcwd()
 month_folders = ['NOV', 'DEC', 'JAN']
 
 st.sidebar.header('Filter Options')
