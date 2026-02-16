@@ -257,7 +257,14 @@ else:
                 if 'Date' in df_abv.columns and 'Average Basket Value' in df_abv.columns:
                     df_abv = df_abv.dropna(subset=['Date', 'Average Basket Value'])
                     df_abv['Date'] = pd.to_datetime(df_abv['Date'], dayfirst=True, errors='coerce')
-                    df_abv = df_abv.dropna(subset=['Date']).sort_values('Date').drop_duplicates(subset=['Date'], keep='first')
+                    df_abv = df_abv.dropna(subset=['Date'])
+                    
+                    # Filter for the most frequent year
+                    if not df_abv.empty:
+                        most_freq_year = df_abv['Date'].dt.year.mode()[0]
+                        df_abv = df_abv[df_abv['Date'].dt.year == most_freq_year]
+
+                    df_abv = df_abv.sort_values('Date').drop_duplicates(subset=['Date'], keep='first')
                     if not df_abv.empty:
                         fig_abv = px.line(df_abv, x='Date', y='Average Basket Value')
                         fig_abv.update_layout(showlegend=False, xaxis_title=None, yaxis_title='ABV (₹)')
@@ -283,7 +290,14 @@ else:
                 if 'Date' in df_orders.columns and 'Total Orders' in df_orders.columns:
                     df_orders = df_orders.dropna(subset=['Date', 'Total Orders'])
                     df_orders['Date'] = pd.to_datetime(df_orders['Date'], dayfirst=True, errors='coerce')
-                    df_orders = df_orders.dropna(subset=['Date']).sort_values('Date').drop_duplicates(subset=['Date'], keep='first')
+                    df_orders = df_orders.dropna(subset=['Date'])
+
+                    # Filter for the most frequent year
+                    if not df_orders.empty:
+                        most_freq_year = df_orders['Date'].dt.year.mode()[0]
+                        df_orders = df_orders[df_orders['Date'].dt.year == most_freq_year]
+
+                    df_orders = df_orders.sort_values('Date').drop_duplicates(subset=['Date'], keep='first')
                     if not df_orders.empty:
                         fig_orders = px.line(df_orders, x='Date', y='Total Orders', color_discrete_sequence=['green'])
                         fig_orders.update_layout(showlegend=False, xaxis_title=None, yaxis_title='Orders')
@@ -309,7 +323,14 @@ else:
             if 'Date' in df_turn.columns and 'Daily Turnover' in df_turn.columns:
                 df_turn = df_turn.dropna(subset=['Date', 'Daily Turnover'])
                 df_turn['Date'] = pd.to_datetime(df_turn['Date'], dayfirst=True, errors='coerce')
-                df_turn = df_turn.dropna(subset=['Date']).sort_values('Date').drop_duplicates(subset=['Date'], keep='first')
+                df_turn = df_turn.dropna(subset=['Date'])
+
+                # Filter for the most frequent year
+                if not df_turn.empty:
+                    most_freq_year = df_turn['Date'].dt.year.mode()[0]
+                    df_turn = df_turn[df_turn['Date'].dt.year == most_freq_year]
+
+                df_turn = df_turn.sort_values('Date').drop_duplicates(subset=['Date'], keep='first')
                 if not df_turn.empty:
                     fig_turnover = px.line(df_turn, x='Date', y='Daily Turnover', color_discrete_sequence=['orange'])
                     fig_turnover.update_layout(showlegend=False, xaxis_title=None, yaxis_title='Turnover (₹)')
