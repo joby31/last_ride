@@ -102,6 +102,37 @@ if selected_month == 'ALL':
         fig_top10.update_layout(yaxis={'categoryorder':'total ascending'})
         st.plotly_chart(fig_top10, use_container_width=True)
     
+    st.markdown('---')
+    st.subheader('Customer Purchasing Gap (%)')
+    all_gap_data = []
+    for month in month_folders:
+        month_path = os.path.join(BASE_PATH, month)
+        gap_file = glob.glob(os.path.join(month_path, '*purchasing_gap*.xlsx'))
+        if gap_file:
+            try:
+                gap_df = pd.read_excel(gap_file[0])
+                if 'Purchasing Gap' in gap_df.columns and 'Percentage' in gap_df.columns:
+                    all_gap_data.append(gap_df)
+            except:
+                pass
+    
+    if all_gap_data:
+        combined_gap = pd.concat(all_gap_data, ignore_index=True)
+        gap_grouped = combined_gap.groupby('Purchasing Gap', as_index=False)['Percentage'].mean()
+        gap_grouped = gap_grouped.sort_values('Percentage', ascending=True)
+        fig_gap = px.bar(gap_grouped, x='Percentage', y='Purchasing Gap', orientation='h',
+                        text=gap_grouped['Percentage'].apply(lambda x: f'{x:.1f}%'),
+                        color_discrete_sequence=['#1f77b4'])
+        fig_gap.update_traces(textposition='outside')
+        fig_gap.update_layout(
+            xaxis_title='Percentage (%)',
+            yaxis_title='Purchasing Gap',
+            showlegend=False,
+            height=400,
+            yaxis={'categoryorder':'total ascending'}
+        )
+        st.plotly_chart(fig_gap, use_container_width=True)
+    
     st.info('Select a specific month from the sidebar to view detailed performance.')
 
 else:
@@ -295,3 +326,26 @@ else:
                     st.success(f' {selected_month} Turnover Chart Loaded!')
         except Exception as e:
             st.error(f'Error loading turnover: {e}')
+    
+    st.markdown('---')
+    st.subheader('Customer Purchasing Gap (%)')
+    gap_file = glob.glob(os.path.join(month_path, '*purchasing_gap*.xlsx'))
+    if gap_file:
+        try:
+            gap_df = pd.read_excel(gap_file[0])
+            if 'Purchasing Gap' in gap_df.columns and 'Percentage' in gap_df.columns:
+                gap_df = gap_df.sort_values('Percentage', ascending=True)
+                fig_gap = px.bar(gap_df, x='Percentage', y='Purchasing Gap', orientation='h',
+                                text=gap_df['Percentage'].apply(lambda x: f'{x:.1f}%'),
+                                color_discrete_sequence=['#1f77b4'])
+                fig_gap.update_traces(textposition='outside')
+                fig_gap.update_layout(
+                    xaxis_title='Percentage (%)',
+                    yaxis_title='Purchasing Gap',
+                    showlegend=False,
+                    height=400,
+                    yaxis={'categoryorder':'total ascending'}
+                )
+                st.plotly_chart(fig_gap, use_container_width=True)
+        except Exception as e:
+            st.error(f'Error loading purchasing gap: {e}')

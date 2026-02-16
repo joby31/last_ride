@@ -1,0 +1,38 @@
+﻿============================================================
+DASHBOARD DATA DIAGNOSTIC
+============================================================
+
+### NOV ###
+Path: c:/Users/anilk/OneDrive/Desktop/LAST_RIDE\NOV
+Exists: True
+KPI files found: 1
+  - november_kpi_cards.xlsx
+  - Rows: 6, Columns: ['KPI', 'Value']
+*orders*.xlsx: november_orders.xlsx
+*abv*.xlsx: november_abv.xlsx
+*turnover*.xlsx: november_turnover.xlsx
+
+### DEC ###
+Path: c:/Users/anilk/OneDrive/Desktop/LAST_RIDE\DEC
+Exists: True
+KPI files found: 1
+  - december_kpi_cards.xlsx
+  - Rows: 5, Columns: ['KPI', 'Value']
+*orders*.xlsx: december_orders.xlsx
+*abv*.xlsx: december_abv.xlsx
+*turnover*.xlsx: december_turnover.xlsx
+
+### JAN ###
+Path: c:/Users/anilk/OneDrive/Desktop/LAST_RIDE\JAN
+Exists: True
+KPI files found: 1
+  - january_kpi_cards (1).xlsx
+  - Rows: 5, Columns: ['KPI', 'Value']
+*orders*.xlsx: january_orders.xlsx
+*abv*.xlsx: january_abv.xlsx
+*turnover*.xlsx: january_turnover.xlsx
+
+============================================================
+If all files show 'found', the data is accessible.
+If you see 'Exists: False', check the BASE_PATH.
+============================================================
