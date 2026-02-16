@@ -113,6 +113,30 @@ else:
         kpi_df = pd.read_excel(kpi_file[0])
         kpi_df['KPI'] = kpi_df['KPI'].astype(str).str.strip()
         kpi_df['Value'] = pd.to_numeric(kpi_df['Value'], errors='coerce')
+        
+        # Calculate or Set Retention Rate
+        if not kpi_df['KPI'].str.contains('Retention', case=False).any():
+            retention_value = None
+            
+            # Use hardcoded values if available
+            if selected_month == 'DEC':
+                retention_value = 12.2
+            elif selected_month == 'JAN':
+                retention_value = 16.0
+            else:
+                # Calculate for other months (like NOV)
+                try:
+                    total_orders = kpi_df.loc[kpi_df['KPI'].str.contains('Total Orders', case=False), 'Value'].values[0]
+                    old_orders = kpi_df.loc[kpi_df['KPI'].str.contains('Old Orders', case=False), 'Value'].values[0]
+                    if total_orders > 0:
+                        retention_value = (old_orders / total_orders) * 100
+                except:
+                    pass
+            
+            if retention_value is not None:
+                new_row = pd.DataFrame({'KPI': ['Retention Rate'], 'Value': [retention_value]})
+                kpi_df = pd.concat([kpi_df, new_row], ignore_index=True)
+        
         kpi_df = kpi_df.dropna(subset=['Value'])
         num_kpis = len(kpi_df)
         if num_kpis > 0:
@@ -122,7 +146,7 @@ else:
                 kpi_value = row['Value']
                 if 'turnover' in kpi_name.lower() or 'basket' in kpi_name.lower():
                     formatted_value = f'₹{kpi_value:,.2f}'
-                elif 'rate' in kpi_name.lower():
+                elif 'rate' in kpi_name.lower() or 'retention' in kpi_name.lower():
                     formatted_value = f'{kpi_value:.2f}%'
                 else:
                     formatted_value = f'{kpi_value:,.0f}'
