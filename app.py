@@ -5,6 +5,72 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import os
 import glob
+import re
+
+def parse_payment_file(filepath):
+    """Parse a calendar-grid payment method Excel file.
+    Returns list of dicts with keys: Day, COD, Instamojo.
+    Handles both separate-row and combined-cell formats."""
+    raw = pd.read_excel(filepath, header=None)
+    records = []
+    for row_idx in range(len(raw)):
+        row = raw.iloc[row_idx]
+        day_cells = {}
+        for col_idx, val in enumerate(row):
+            try:
+                day = int(float(val))
+                if 1 <= day <= 31:
+                    day_cells[col_idx] = day
+            except (ValueError, TypeError):
+                pass
+        if not day_cells:
+            continue
+        # Gather candidate rows below the day-number row
+        cod_row = instamojo_row = None
+        combined_row = None  # row where COD+Instamojo are in same cell
+        for offset in range(1, 5):
+            if row_idx + offset >= len(raw):
+                break
+            candidate = raw.iloc[row_idx + offset]
+            for c_val in candidate:
+                c_str = str(c_val).lower()
+                if 'cod:' in c_str and 'instamojo:' in c_str:
+                    combined_row = candidate
+                    break
+            if combined_row is not None:
+                break
+            cand_str = candidate.astype(str).str.lower()
+            if cand_str.str.contains('cod:').any() and cod_row is None:
+                cod_row = candidate
+            if cand_str.str.contains('instamojo:').any() and instamojo_row is None:
+                instamojo_row = candidate
+        if cod_row is None and instamojo_row is None and combined_row is None:
+            continue
+        for col_idx, day in day_cells.items():
+            cod_val = 0
+            insta_val = 0
+            if combined_row is not None:
+                cell = str(combined_row.iloc[col_idx])
+                cod_match = re.search(r'cod:\s*(\d+)', cell, re.IGNORECASE)
+                insta_match = re.search(r'instamojo:\s*(\d+)', cell, re.IGNORECASE)
+                if cod_match:
+                    cod_val = int(cod_match.group(1))
+                if insta_match:
+                    insta_val = int(insta_match.group(1))
+            else:
+                if cod_row is not None:
+                    cell = str(cod_row.iloc[col_idx])
+                    m = re.search(r'cod:\s*(\d+)', cell, re.IGNORECASE)
+                    if m:
+                        cod_val = int(m.group(1))
+                if instamojo_row is not None:
+                    cell = str(instamojo_row.iloc[col_idx])
+                    m = re.search(r'instamojo:\s*(\d+)', cell, re.IGNORECASE)
+                    if m:
+                        insta_val = int(m.group(1))
+            records.append({'Day': day, 'COD': cod_val, 'Instamojo': insta_val})
+    return records
+
 
 st.set_page_config(page_title='Pantry Monthly Performance Dashboard', layout='wide')
 st.title('Pantry Monthly Performance Dashboard')
@@ -132,6 +198,44 @@ if selected_month == 'ALL':
             yaxis={'categoryorder':'total ascending'}
         )
         st.plotly_chart(fig_gap, use_container_width=True)
+    
+    st.markdown('---')
+    st.subheader('COD vs Instamojo by Month')
+    payment_summary = []
+    for month in month_folders:
+        month_path = os.path.join(BASE_PATH, month)
+        payment_file = glob.glob(os.path.join(month_path, '*payment_method*.xlsx'))
+        if payment_file:
+            try:
+                records = parse_payment_file(payment_file[0])
+                if records:
+                    pay_df = pd.DataFrame(records).drop_duplicates('Day', keep='first')
+                    payment_summary.append({'Month': month, 'COD': int(pay_df['COD'].sum()), 'Instamojo': int(pay_df['Instamojo'].sum())})
+            except:
+                pass
+
+    if payment_summary:
+        pay_sum_df = pd.DataFrame(payment_summary)
+        fig_pay_bar = go.Figure()
+        fig_pay_bar.add_trace(go.Bar(
+            x=pay_sum_df['Month'], y=pay_sum_df['COD'],
+            name='COD', marker_color='#FF6B6B',
+            text=pay_sum_df['COD'], textposition='outside'
+        ))
+        fig_pay_bar.add_trace(go.Bar(
+            x=pay_sum_df['Month'], y=pay_sum_df['Instamojo'],
+            name='Instamojo', marker_color='#4ECDC4',
+            text=pay_sum_df['Instamojo'], textposition='outside'
+        ))
+        fig_pay_bar.update_layout(
+            barmode='group',
+            xaxis_title='Month',
+            yaxis_title='Total Orders',
+            hovermode='x unified',
+            height=450,
+            showlegend=True
+        )
+        st.plotly_chart(fig_pay_bar, use_container_width=True)
     
     st.info('Select a specific month from the sidebar to view detailed performance.')
 
@@ -370,3 +474,46 @@ else:
                 st.plotly_chart(fig_gap, use_container_width=True)
         except Exception as e:
             st.error(f'Error loading purchasing gap: {e}')
+    
+    st.markdown('---')
+    st.subheader('Payment Method Trend (COD vs Instamojo)')
+    payment_file = glob.glob(os.path.join(month_path, '*payment_method*.xlsx'))
+    if payment_file:
+        try:
+            payment_records = parse_payment_file(payment_file[0])
+
+            if payment_records:
+                pay_df = pd.DataFrame(payment_records).sort_values('Day').reset_index(drop=True)
+                # Deduplicate by day (keep first occurrence)
+                pay_df = pay_df.drop_duplicates(subset=['Day'], keep='first')
+                fig_pay = go.Figure()
+                fig_pay.add_trace(go.Scatter(
+                    x=pay_df['Day'], y=pay_df['COD'],
+                    name='COD',
+                    mode='lines',
+                    fill='tozeroy',
+                    line=dict(color='#FF6B6B', width=2),
+                    fillcolor='rgba(255, 107, 107, 0.4)'
+                ))
+                fig_pay.add_trace(go.Scatter(
+                    x=pay_df['Day'], y=pay_df['Instamojo'],
+                    name='Instamojo',
+                    mode='lines',
+                    fill='tonexty',
+                    line=dict(color='#4ECDC4', width=2),
+                    fillcolor='rgba(78, 205, 196, 0.4)'
+                ))
+                fig_pay.update_layout(
+                    xaxis_title='Day of Month',
+                    yaxis_title='Number of Orders',
+                    hovermode='x unified',
+                    height=400,
+                    showlegend=True,
+                    xaxis=dict(dtick=1)
+                )
+                st.plotly_chart(fig_pay, use_container_width=True)
+                st.success(f' {selected_month} Payment Method Chart Loaded!')
+            else:
+                st.info('No payment data found in file.')
+        except Exception as e:
+            st.error(f'Error loading payment method: {e}')
